@@ -1,0 +1,13 @@
+---
+
+username: root
+password: root123
+
+devices:
+  - b
+    172.16.5.20
+    a
+
+
+
+

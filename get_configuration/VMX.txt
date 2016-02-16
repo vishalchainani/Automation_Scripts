@@ -1,0 +1,56 @@
+<configuration-text>
+## Last changed: 2016-02-16 09:49:40 UTC
+version 15.2-20151117_ib_16_1_jdi.0;
+system {
+    host-name VMX;
+    root-authentication {
+        encrypted-password "$5$UMtr1wZ9$5gt0WaDqxBIcLBp.bdTvRZUpxk9bcXCZiteSCXliiM4";
+    }
+    scripts {
+        language python;
+    }
+    login {
+        user lab {
+            uid 2000;
+            class super-user;
+            authentication {
+                encrypted-password "$5$W2nvwLc7$wap38dwxtX5g45Vj9Ph4bAvsHIRQoSoLSV4zlF.wh38";
+            }
+        }
+    }
+    services {
+        ssh;
+        telnet;
+        netconf {
+            ssh;
+        }
+    }
+    syslog {
+        user * {
+            any emergency;
+        }
+        file messages {
+            any notice;
+            authorization info;
+        }
+        file interactive-commands {
+            interactive-commands any;
+        }
+    }
+}
+interfaces {
+    ge-2/0/0 {
+        mac 00:0c:29:86:77:6d;
+        unit 0 {
+            family inet {
+                address 172.16.5.20/24;
+            }
+        }
+    }
+}
+routing-options {
+    static {
+        route 0.0.0.0/0 next-hop 172.16.5.1;
+    }
+}
+</configuration-text>
