@@ -1,0 +1,97 @@
+version 1.0;
+ns junos = "http://xml.juniper.net/junos/*/junos";
+ns xnm = "http://xml.juniper.net/xnm/1.1/xnm";
+ns jcs = "http://xml.juniper.net/junos/commit-scripts/1.0";
+import "../import/junos.xsl";
+
+
+
+var $Start_Address = jcs:get-input("Enter the Start Address of Subnet: ");
+var $End_Address = jcs:get-input("Enter the End Address of Subnet: ");
+var $Filter_Name = jcs:get-input("Enter name of the firewall filter: ");
+var $Policer = jcs:get-input("Enter Bandwidth to limit traffic in Mbps e.g. 1m: ");
+
+var $default_address = "0.0.0.0";
+var $default_address_mask = "0";
+var $ip_mask = "32";
+var $split_Start_Address = jcs:split("\\.",$Start_Address);
+var $split_End_Address = jcs:split("\\.",$End_Address);
+
+match / {
+	<op-script-results> {
+		var $config-changes = {
+			<configuration> {
+				<firewall> {
+					<family> {
+						<inet> {
+							<filter> {
+								<name> $Filter_Name;
+								for $range ($split_Start_Address[4] ... $split_End_Address[4]) {
+									<term> {
+										<name> "BW_Limit"_($split_Start_Address[3])_"_"_($range);
+										<from> {
+											<source-address> {
+												<name> ($split_Start_Address[1])_"."_($split_Start_Address[2])_"."_($split_Start_Address[3])_"."_($range)_"/"_($ip_mask);
+											}
+											<destination-address> {
+												<name> ($default_address)_"/"_($default_address_mask);
+											}
+										}
+										<then> {
+											<policer> $Policer;
+											<accept>;
+										}
+									}
+								}
+								<term> {
+									<name> "Default";
+									<then> {
+										<accept>;
+									}
+								}		
+							}
+						}
+					}
+					<policer> {
+						<name> $Policer;
+						<if-exceeding> {
+							<bandwidth-limit> $Policer;
+							<burst-size-limit> "1500";
+						}
+						<then> {
+							<discard>;
+						}
+					}
+				}
+			}
+		}
+		var $load_action = "merge";
+		var $conn_handle = jcs:open();
+		var $options := {
+			<commit-options> {
+				<log> "Adding New Firewall Filter";
+			}
+		}
+		var $results := {
+			call jcs:load-configuration($action=$load_action, $commit-options=$options, $configuration=$config-changes, $connection=$conn_handle);
+		}
+		if ($results//xnm:error) {
+			for-each ($results//xnm:error) {
+			  /* add code here */
+			  <output> message;
+			}
+		}
+		if ($results//xnm:warning) {
+			for-each ($results//xnm:warning) {
+			  /* add code here */
+			  <output> message;
+			}
+		}
+		var $close-results = jcs:close($conn_handle);
+	}
+}
+
+
+
+
+
